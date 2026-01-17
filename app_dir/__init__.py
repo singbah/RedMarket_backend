@@ -63,7 +63,7 @@ def create_app():
         JWT_COOKIE_SAMESITE="Lax",
         JWT_COOKIE_CSRF_PROTECT=False,
         JWT_SECRET_KEY=os.getenv('SECRET_KEY', 'default_jwt_secret_key'),
-        JWT_Access_TOKEN_EXPIRES = datetime.timedelta(days=7),
+        JWT_ACCESS_TOKEN_EXPIRES = datetime.timedelta(days=7),
         JWT_REFRESH_TOKEN_EXPIRES = datetime.timedelta(days=30),
         MAIL_SERVER=os.getenv('MAIL_SERVER', 'smtp.gmail.com'),
         MAIL_PORT=int(os.getenv('MAIL_PORT', 587)),
