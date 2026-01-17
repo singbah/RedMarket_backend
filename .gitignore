@@ -4,4 +4,4 @@ instance
 *.pyc
 static
 redlight_
-*.vscode
+.vscode
