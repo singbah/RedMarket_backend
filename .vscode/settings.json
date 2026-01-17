@@ -1,8 +1,0 @@
-{
-    "editor.cursorStyle": "underline",
-    "editor.cursorSurroundingLines": 1,
-    "editor.cursorSurroundingLinesStyle": "all",
-    "editor.fontSize": 16,
-    "diffEditor.codeLens": true,
-    "diffEditor.experimental.showMoves": true
-}
