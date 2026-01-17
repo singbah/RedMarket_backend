@@ -5,3 +5,4 @@ instance
 static
 redlight_
 .vscode
+__pycache__
