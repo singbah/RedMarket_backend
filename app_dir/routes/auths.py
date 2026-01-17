@@ -80,14 +80,14 @@ def login():
     # Generate tokens
     access_token = create_access_token(identity=str(user.id))
     refresh_token = create_refresh_token(identity=str(user.id))
-    response = json_ok({
-                        "user": user.to_dict(),
+    resp, status_code = json_ok({
+                        "user": user.to_dict(user.password),
                         "access_token": access_token
                     }, 200)
     
-    set_refresh_cookies(response, refresh_token)
+    set_refresh_cookies(resp, refresh_token)
 
-    return response
+    return resp, status_code
 
 # FORGOT PASSWORD AND SEND OTP CODE
 @auth_bp.route("/forgot_password", methods=['POST'])
@@ -170,7 +170,7 @@ def check_otp():
    
 # CHANGE PASSWORD ROUTE 
 @auth_bp.route("/change_password", methods=['POST'])
-@jwt_required()
+@jwt_required(refresh=True)
 def change_password():
     try:
         current_user_id  = int(get_jwt_identity())
@@ -190,10 +190,10 @@ def change_password():
 
     return json_ok({"user":user.to_dict()})
 
-@auth_bp.route("/refresh_user")
+@auth_bp.route("/refresh_user", methods=['POST'])
 @jwt_required(refresh=True)
 def refresh_user():
     user_id = int(get_jwt_identity())
-
+    user = User.query.filter_by(id=user_id).first()
     new_access_token = create_access_token(identity=str(user_id))
-    return json_ok({"access":new_access_token})
+    return json_ok({"access":new_access_token, "user":user.to_dict()})
