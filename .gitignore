@@ -1,0 +1,6 @@
+*.env
+*.vscode
+instance
+*.pyc
+static
+redlight_
