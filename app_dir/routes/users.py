@@ -113,7 +113,6 @@ def add_to_cart():
         admin_id = int(get_jwt_identity())
         product_id = request.json.get("id")
         quantity = request.json.get("quantity")
-        print(product_id, quantity, admin_id)
     except Exception as e:
         return jsonify({"error":str(e)}), 400
     

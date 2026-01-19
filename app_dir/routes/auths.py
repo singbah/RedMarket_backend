@@ -3,7 +3,7 @@ from app_dir.models import User, OTP
 from app_dir import allow_files, UPLOAD_FOLDER, json_err, json_ok, generate_otp, send_emails, db
 from werkzeug.utils import secure_filename
 import os, datetime
-from flask_jwt_extended import get_jwt_identity, create_access_token, create_refresh_token, jwt_required, set_refresh_cookies
+from flask_jwt_extended import get_jwt_identity, create_access_token, create_refresh_token, jwt_required, set_refresh_cookies, unset_jwt_cookies, set_access_cookies
 
 auth_bp = Blueprint("auths", __name__, url_prefix="/auths")
 MAX_OTP_ATTEMPTS = 5
@@ -86,6 +86,7 @@ def login():
                     }, 200)
     
     set_refresh_cookies(resp, refresh_token)
+    set_access_cookies(resp, access_token)
 
     return resp, status_code
 
@@ -193,7 +194,16 @@ def change_password():
 @auth_bp.route("/refresh_user", methods=['POST'])
 @jwt_required(refresh=True)
 def refresh_user():
-    user_id = int(get_jwt_identity())
+    try:
+        user_id = int(get_jwt_identity())
+    except Exception as e:
+        json_err(str(e))
     user = User.query.filter_by(id=user_id).first()
     new_access_token = create_access_token(identity=str(user_id))
-    return json_ok({"access":new_access_token, "user":user.to_dict()})
+    return json_ok({"access_token":new_access_token, "user":user.to_dict()})
+
+@auth_bp.route("/logout", methods=['POST'])
+def logout():
+    resp, status_code = json_ok({"msg":"Loged Out"})
+    unset_jwt_cookies(resp)
+    return resp, status_code
