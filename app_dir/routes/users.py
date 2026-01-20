@@ -152,7 +152,7 @@ def get_cart_item():
         return jsonify({"error":"User Not Found", "msg":"error"}), 404
 
     cart_items = CartItem.query.filter_by(user_id=user.get("id")).all()
-
+ 
     if not cart_items:
         return jsonify({"error":"No Item On Cart", "msg":"error"}), 404
 
@@ -161,6 +161,15 @@ def get_cart_item():
 @user_bp.route("/clear_cart", methods=['GET'])
 @jwt_required()
 def clear_cart():
-    pass
+    try:
+        user_id = int(get_jwt_identity())
+    except Exception as e:
+        return jsonify({"error":str(e)})
+    user = User.query.filter_by(id=user_id).first()
+    cart_item = CartItem.query.filter_by(user_id=user_id).all()
+
+    for item in cart_item:
+        item.delete()
+
 
 
