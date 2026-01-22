@@ -9,6 +9,7 @@ auth_bp = Blueprint("auths", __name__, url_prefix="/auths")
 MAX_OTP_ATTEMPTS = 5
 
 # REGISTER ROUTE
+
 @auth_bp.route("/register", methods=["POST"])
 def register():
     try:
@@ -71,11 +72,32 @@ def login():
 
     if not all([email, password]):
         return json_err("All fields required", 400)
-
+    
     user = User.query.filter_by(email=email).first()
 
-    if not user or not user.check_password(password):
-        return json_err("Wrong email or password", 400)
+    if not user:
+        return json_err()
+    
+    # if user.reset_start_time <= user.reset_end_time:
+    #     return json_err("still need time")
+    
+    if user.password_try >= MAX_OTP_ATTEMPTS:
+        user.password_try = 0
+        user.reset_start_time = datetime.datetime.utcnow()
+        user.reset_end_time =  datetime.datetime.utcnow() + datetime.timedelta(seconds=30)
+        db.session.commit()
+        return json_err("Too many Attempt please try again in 5mins")
+    
+
+    if not user.check_password(password):
+        user.password_try +=1
+        db.session.commit()
+        return json_err(f"Wrong email or password: attempts  {user.password_try}", 400)
+    
+    user.password_try = 0
+    user.reset_start_time = None
+    user.reset_end_time = None
+    db.session.commit()
 
     # Generate tokens
     access_token = create_access_token(identity=str(user.id))

@@ -89,6 +89,11 @@ class User(BaseModel):
     is_admin = db.Column(db.Boolean, default=False)
     password = db.Column(db.String(256), nullable=False)
 
+    password_try = db.Column(db.Integer, default=0)
+    reset_start_time = db.Column(db.DateTime, nullable=True)
+    reset_end_time = db.Column(db.DateTime, nullable=True)
+
+
     # Relationships (core cascades and useful backrefs)
     products = db.relationship(
         "Product", backref="admin", cascade="all, delete-orphan", lazy="select"
