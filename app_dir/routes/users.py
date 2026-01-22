@@ -114,7 +114,7 @@ def add_to_cart():
         product_id = request.json.get("id")
         quantity = request.json.get("quantity")
     except Exception as e:
-        return jsonify({"error":str(e)}), 400
+        return jsonify(e=e), 400
     
     admin = User.query.filter_by(id=admin_id).first()
     product = Product.query.filter_by(id=product_id).first()

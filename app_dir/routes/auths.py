@@ -80,10 +80,7 @@ def login():
     # Generate tokens
     access_token = create_access_token(identity=str(user.id))
     refresh_token = create_refresh_token(identity=str(user.id))
-    resp, status_code = json_ok({
-                        "user": user.to_dict(user.password),
-                        "access_token": access_token
-                    }, 200)
+    resp, status_code = json_ok({"user": user.to_dict(user.password),}, 200)
     
     set_refresh_cookies(resp, refresh_token)
     set_access_cookies(resp, access_token)
@@ -165,10 +162,11 @@ def check_otp():
 
     access_token = create_access_token(identity=str(user.id))
     refresh_token = create_refresh_token(identity=str(user.id))
+
     return json_ok({"user":user.to_dict(),
                     "access_token":access_token,
                     "refresh_token":refresh_token}, 200)
-   
+
 # CHANGE PASSWORD ROUTE 
 @auth_bp.route("/change_password", methods=['POST'])
 @jwt_required(refresh=True)
@@ -199,11 +197,16 @@ def refresh_user():
     except Exception as e:
         json_err(str(e))
     user = User.query.filter_by(id=user_id).first()
+    resp, status_code = json_ok({"user":user.to_dict()})
     new_access_token = create_access_token(identity=str(user_id))
-    return json_ok({"access_token":new_access_token, "user":user.to_dict()})
+    new_refresh_token = create_refresh_token(identity=str(user_id))
+
+    set_refresh_cookies(resp, new_refresh_token)
+    set_access_cookies(resp, new_access_token)
+    return resp, status_code
 
 @auth_bp.route("/logout", methods=['POST'])
 def logout():
-    resp, status_code = json_ok({"msg":"Loged Out"})
+    resp, status_code = json_ok({"ok":"Loged Out"})
     unset_jwt_cookies(resp)
     return resp, status_code
