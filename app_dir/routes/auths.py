@@ -60,40 +60,43 @@ def register():
     return json_ok({"user": new_user.to_dict()}, 200)
 
 
-# LOGIN ROUTE
 @auth_bp.route("/login", methods=["POST"])
 def login():
-    try:
-        data = request.get_json()
-        email = data.get("email")
-        password = data.get("password")
-    except Exception as e:
-        return json_err(str(e), 400)
+    data = request.get_json(silent=True)
 
-    if not all([email, password]):
+    if not data:
+        return json_err("Invalid request body", 400)
+
+    email = data.get("email")
+    password = data.get("password")
+
+    if not email or not password:
         return json_err("All fields required", 400)
-    
+
     user = User.query.filter_by(email=email).first()
-
     if not user:
-        return json_err()
-    
-    # if user.reset_start_time <= user.reset_end_time:
-    #     return json_err("still need time")
-    
-    if user.password_try >= MAX_OTP_ATTEMPTS:
-        user.password_try = 0
-        user.reset_start_time = datetime.datetime.utcnow()
-        user.reset_end_time =  datetime.datetime.utcnow() + datetime.timedelta(seconds=30)
-        db.session.commit()
-        return json_err("Too many Attempt please try again in 5mins")
-    
+        return json_err("Invalid email or password", 401)
 
+    now = datetime.datetime.utcnow()
+
+    # 🔒 Check lockout window
+    if user.reset_end_time and now < user.reset_end_time:
+        remaining = int((user.reset_end_time - now).total_seconds())
+        return json_err(f"Too many attempts. Try again in {remaining}s", 429)
+
+    # ❌ Wrong password
     if not user.check_password(password):
-        user.password_try +=1
+        user.password_try += 1
+
+        # Lock account if limit reached
+        if user.password_try >= MAX_OTP_ATTEMPTS:
+            user.reset_start_time = now
+            user.reset_end_time = now + datetime.timedelta(seconds=30)
+
         db.session.commit()
-        return json_err(f"Wrong email or password: attempts  {user.password_try}", 400)
-    
+        return json_err("Invalid email or password", 401)
+
+    # ✅ Successful login — reset counters
     user.password_try = 0
     user.reset_start_time = None
     user.reset_end_time = None
@@ -102,12 +105,17 @@ def login():
     # Generate tokens
     access_token = create_access_token(identity=str(user.id))
     refresh_token = create_refresh_token(identity=str(user.id))
-    resp, status_code = json_ok({"user": user.to_dict(user.password),}, 200)
-    
-    set_refresh_cookies(resp, refresh_token)
+
+    resp, status_code = json_ok(
+        {"user": user.to_dict(["password"])},
+        200
+    )
+
     set_access_cookies(resp, access_token)
+    set_refresh_cookies(resp, refresh_token)
 
     return resp, status_code
+
 
 # FORGOT PASSWORD AND SEND OTP CODE
 @auth_bp.route("/forgot_password", methods=['POST'])

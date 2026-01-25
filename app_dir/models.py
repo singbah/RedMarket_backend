@@ -22,6 +22,7 @@ class BaseModel(db.Model):
         onupdate=db.func.current_timestamp()
     )
     is_deleted = db.Column(db.Boolean, default=False)
+    is_active = db.Column(db.Boolean, default=True)
 
     def save(self):
         db.session.add(self)
@@ -31,6 +32,9 @@ class BaseModel(db.Model):
         self.is_deleted = True
         self.is_active=False
         db.session.commit()
+    
+    def deactivate(self):
+        self.is_active = False
     
     def restore(self):
         self.is_active = True
