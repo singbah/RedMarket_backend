@@ -2,7 +2,7 @@ from app_dir.models import User, Product, CartItem
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask import request, jsonify, Blueprint
 import datetime, os
-from app_dir import allow_files, UPLOAD_FOLDER
+from app_dir import allow_files, UPLOAD_FOLDER, json_err, json_ok
 from werkzeug.utils import secure_filename
 
 ERROR = {"msg":"error"}
@@ -19,8 +19,12 @@ def get_user():
         return jsonify({"status":"error", "msg":str(e)}), 400
     user = User.query.filter_by(id=current_user_id).first()
     if not user:
-        return jsonify({"status":"error", "msg":"User Not Found"}), 404
-    return jsonify({"status":"Ok", "user":user.to_dict()}), 200
+        return json_err("User Not Found")
+    
+    if not user.is_active or not user.is_deleted:
+        return json_err("User Not Activated")
+    
+    return jsonify({"status":"Ok", "user":user.to_dict(['password'])}), 200
 
 @user_bp.route("/admin_login", methods=['GET'])
 @jwt_required()
@@ -40,13 +44,14 @@ def admin_login():
 
 
 @user_bp.route("/add_product", methods=['POST'])
+@jwt_required()
 def add_product():
     try:
         item_name = request.form.get("item_name")
         item_photo = request.files.get("item_photo")
         item_price = request.form.get("item_price")
         item_stock = request.form.get("item_stock")
-        user_id = request.form.get("user_id")
+        user_id = int(get_jwt_identity())
     except Exception as e:
         return jsonify({"error":str(e)}), 400
 

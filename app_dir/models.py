@@ -183,7 +183,10 @@ class Product(BaseModel):
     def get_product(cls, product_id):
         return cls.query.filter_by(id=product_id).first()
         
+class ProductImage(BaseModel):
+    __tablename__ = 'product_images'
 
+    product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False)
 # Auto-generate SKU before insert if not supplied
 @event.listens_for(Product, "before_insert")
 def set_product_sku(mapper, connection, target):
