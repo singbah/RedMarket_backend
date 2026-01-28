@@ -1,4 +1,4 @@
-from app_dir.models import User, Product, CartItem
+from app_dir.models import User, Product, CartItem, Address
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask import request, jsonify, Blueprint
 import datetime, os
@@ -18,13 +18,15 @@ def get_user():
     except Exception as e:
         return jsonify({"status":"error", "msg":str(e)}), 400
     user = User.query.filter_by(id=current_user_id).first()
+    address = user.address
+
     if not user:
         return json_err("User Not Found")
     
-    if not user.is_active or not user.is_deleted:
+    if not user.is_active or user.is_deleted:
         return json_err("User Not Activated")
     
-    return jsonify({"status":"Ok", "user":user.to_dict(['password'])}), 200
+    return jsonify({"status":"Ok", "user":user.to_dict(['password']), "address":address}), 200
 
 @user_bp.route("/admin_login", methods=['GET'])
 @jwt_required()
@@ -42,6 +44,18 @@ def admin_login():
     user.save()
     return jsonify({"user":user.to_dict(), "msg":"ok"}), 200
 
+@user_bp.route("/add_address", methods=['POST'])
+@jwt_required()
+def add_address():
+    try:
+        user_id = int(get_jwt_identity())
+        data = request.get_json()
+    except Exception as e:
+        return json_err(f"Error: {str(e)}")
+    
+    new_address = Address(**data)
+    
+    return json_ok({"payload":"Address Added"})
 
 @user_bp.route("/add_product", methods=['POST'])
 @jwt_required()

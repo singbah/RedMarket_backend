@@ -9,7 +9,6 @@ auth_bp = Blueprint("auths", __name__, url_prefix="/auths")
 MAX_OTP_ATTEMPTS = 5
 
 # REGISTER ROUTE
-
 @auth_bp.route("/register", methods=["POST"])
 def register():
     try:
@@ -227,7 +226,8 @@ def refresh_user():
     except Exception as e:
         json_err(str(e))
     user = User.query.filter_by(id=user_id).first()
-    resp, status_code = json_ok({"user":user.to_dict()})
+    address = user.address
+    resp, status_code = json_ok({"user":user.to_dict(), "address":[place.to_dict() for place in address]})
     new_access_token = create_access_token(identity=str(user_id))
     new_refresh_token = create_refresh_token(identity=str(user_id))
 
